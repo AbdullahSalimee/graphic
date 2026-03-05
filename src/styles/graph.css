@@ -268,13 +268,13 @@
 
 /* ── Chart card ────────────────────────── */
 .chart-card {
-  background: linear-gradient(145deg, rgba(12,22,40,0.97), rgba(8,14,26,0.99));
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(56,189,248,0.1);
-  box-shadow: 0 0 60px rgba(56,189,248,0.04), 0 24px 64px rgba(0,0,0,0.45);
-  overflow: hidden;
-}
-
+     background: linear-gradient(145deg, rgba(12,22,40,0.97), rgba(8,14,26,0.99));
+     border-radius: var(--radius-lg);
+     border: 1px solid rgba(56,189,248,0.1);
+     box-shadow: 0 0 60px rgba(56,189,248,0.04), 0 24px 64px rgba(0,0,0,0.45);
+     overflow: visible;  
+     position: relative;
+   }
 .chart-card-toolbar {
   display: flex;
   align-items: center;

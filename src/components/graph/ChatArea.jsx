@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import ChartToolbar from "./ChartToolbar";
 
 const isMobile = () => window.innerWidth < 640;
 
@@ -15,7 +16,6 @@ function buildLayout(baseLayout) {
       size: mobile ? 10 : 12,
       family: "DM Sans, sans-serif",
     },
-    // On mobile: legend goes BELOW chart horizontally so it doesn't eat chart space
     legend: mobile
       ? {
           orientation: "h",
@@ -31,7 +31,6 @@ function buildLayout(baseLayout) {
           borderwidth: 1,
           font: { size: 12, color: "#94a3b8" },
         },
-    // Tight margins on mobile so chart uses full width
     margin: mobile
       ? { t: 40, l: 46, r: 10, b: 70 }
       : { t: 50, l: 55, r: 30, b: 50 },
@@ -101,7 +100,6 @@ export default function ChatArea({ messages }) {
 function ChartBlock({ message }) {
   const divRef = useRef(null);
   const rendered = useRef(false);
-  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (message.status !== "success" || rendered.current || !divRef.current)
@@ -119,7 +117,6 @@ function ChartBlock({ message }) {
         const layout = buildLayout(message.content.layout || {});
         const mobile = isMobile();
 
-        // Slim down traces slightly on mobile
         const data = (message.content.data || []).map((trace) => ({
           ...trace,
           ...(mobile && trace.type !== "pie" && trace.type !== "bar"
@@ -149,7 +146,7 @@ function ChartBlock({ message }) {
     tryRender();
   }, [message.status]);
 
-  // Reflow on orientation change
+  // Reflow on orientation change / resize
   useEffect(() => {
     const onResize = () => {
       if (divRef.current && window.Plotly && rendered.current) {
@@ -162,25 +159,6 @@ function ChartBlock({ message }) {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [message.content]);
-
-  const handleDownload = async () => {
-    if (!divRef.current || !window.Plotly) return;
-    setDownloading(true);
-    try {
-      const title = message.content?.layout?.title?.text || "chart";
-      const safeName = title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-      await window.Plotly.downloadImage(divRef.current, {
-        format: "png",
-        width: 1400,
-        height: 800,
-        filename: safeName,
-      });
-    } catch (e) {
-      console.error("Download error:", e);
-    } finally {
-      setDownloading(false);
-    }
-  };
 
   if (message.status === "loading") {
     return (
@@ -207,46 +185,16 @@ function ChartBlock({ message }) {
 
   return (
     <div className="chart-card">
+      {/* ── Top bar: title only ───────────────────────────────── */}
       <div className="chart-card-toolbar">
         <span className="chart-card-title">{chartTitle}</span>
-        <button
-          className={`download-btn ${downloading ? "downloading" : ""}`}
-          onClick={handleDownload}
-          disabled={downloading}
-          title="Download as PNG"
-        >
-          {downloading ? (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              className="spin"
-            >
-              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-            </svg>
-          ) : (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          )}
-          <span>{downloading ? "Saving…" : "PNG"}</span>
-        </button>
       </div>
+
+      {/* ── Plotly canvas ─────────────────────────────────────── */}
       <div ref={divRef} className="chart-plot" />
+
+      {/* ── Feature toolbar below canvas ──────────────────────── */}
+      <ChartToolbar divRef={divRef} message={message} />
     </div>
   );
 }
